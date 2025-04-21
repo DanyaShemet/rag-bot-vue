@@ -1,17 +1,19 @@
-<!-- components/PdfUploader.vue -->
 <template>
   <div class="pdf-uploader">
-    <h3>Завантажити PDF</h3>
+    <h2>Завантажити PDF</h2>
 
-    <input type="file" accept="application/pdf" @change="handleFileChange" />
-    <button @click="uploadPdf" :disabled="!file || loading">
-      {{ loading ? 'Завантаження...' : 'Завантажити' }}
+    <input type="file" accept="application/pdf" @change="onFileChange" />
+    <button :disabled="!file || loadingUpload" @click="handleUpload">
+      {{ loadingUpload ? 'Завантаження...' : 'Завантажити PDF' }}
     </button>
 
-    <p v-if="message">{{ message }}</p>
+    <p v-if="uploadError" style="color: red">❌ {{ uploadError.message }}</p>
+    <p v-if="statusError" style="color: red">❌ {{ statusError.message }}</p>
 
-    <p>Кількість фрагментів: {{ chunkCount }}</p>
-    <button @click="resetKnowledge">Скинути базу знань</button>
+    <p v-if="statusLoading">⏳ Оновлення бази знань...</p>
+    <p v-if="statusData">📚 Фрагментів у базі знань: {{ statusData.count }}</p>
+
+    <button @click="resetKnowledge(sessionId)">Скинути базу знань</button>
 
     <button @click="startNewSession">Почати нову сесію</button>
   </div>
@@ -19,75 +21,77 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-
-const file = ref(null)
-const loading = ref(false)
-const message = ref('')
-const chunkCount = ref(0)
+import { useApi } from '@/composables/common/use-api.js'
+import { uploadPdf } from '@/api/upload'
+import { getStatus } from '@/api/status'
+import { resetSession } from '@/api/session.js'
 
 const sessionId = localStorage.getItem('sessionId') || crypto.randomUUID()
 localStorage.setItem('sessionId', sessionId)
 
-function handleFileChange(event) {
-  file.value = event.target.files[0]
+const file = ref(null)
+
+const {
+  call: upload,
+  loading: loadingUpload,
+  error: uploadError,
+} = useApi(uploadPdf, {
+  notifySuccess: true,
+  successMessage: '📎 PDF успішно завантажено!',
+})
+
+const {
+  call: deleteKnowledge,
+  loading: loadingDelete,
+  error: errorDelete,
+} = useApi(resetSession, {
+  notifySuccess: true,
+  successMessage: 'Базу знань оновлено',
+})
+
+const {
+  call: fetchStatus,
+  loading: statusLoading,
+  error: statusError,
+  data: statusData,
+} = useApi(getStatus)
+
+function onFileChange(e) {
+  file.value = e.target.files[0]
 }
 
-async function uploadPdf() {
-  if (!file.value) return
-
-  loading.value = true
-  message.value = ''
-
-  const formData = new FormData()
-  formData.append('file', file.value)
-  formData.append('sessionId', sessionId)
-
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE}/upload`, {
-      method: 'POST',
-      body: formData
-    })
-
-    const data = await res.json()
-    message.value = data.message || 'PDF завантажено успішно.'
-    await fetchChunkCount()
-  } catch (err) {
-    console.error(err)
-    message.value = 'Сталася помилка під час завантаження.'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function fetchChunkCount() {
-  const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/status/${sessionId}`)
-  const data = await res.json()
-  chunkCount.value = data.count
+async function handleUpload() {
+  if (!file.value || !sessionId) return
+  await upload(file.value, sessionId)
+  await fetchStatus(sessionId)
 }
 
 async function resetKnowledge() {
-  const res = await fetch(`${import.meta.env.VITE_API_BASE}/api/reset/${sessionId}`, {
-    method: 'DELETE'
-  })
-  const data = await res.json()
-  message.value = data.message
-  chunkCount.value = 0
+  await deleteKnowledge(sessionId)
+
+  statusData.value = { count: 0 }
 }
 
 function startNewSession() {
   const newId = crypto.randomUUID()
   localStorage.setItem('sessionId', newId)
-  location.reload() // або router push
+  location.reload()
 }
 
-onMounted(fetchChunkCount)
+onMounted(() => {
+  fetchStatus(sessionId)
+})
 </script>
 
 <style scoped>
 .pdf-uploader {
-  border: 1px solid #ccc;
-  padding: 1rem;
-  border-radius: 8px;
-  max-width: 400px;
+  margin-top: 2rem;
+}
+input[type='file'] {
+  margin-bottom: 1rem;
+}
+button {
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
 }
 </style>
