@@ -1,21 +1,43 @@
 <template>
-  <div class="pdf-uploader">
-    <h2>Завантажити PDF</h2>
+  <div class="space-y-6">
+    <h2 class="text-xl font-semibold text-indigo-700">Завантажити PDF</h2>
 
-    <input type="file" accept="application/pdf" @change="onFileChange" />
-    <button :disabled="!file || loadingUpload" @click="handleUpload">
+    <input
+      type="file"
+      accept="application/pdf"
+      class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+      @change="onFileChange"
+    />
+
+    <button
+      :disabled="!file || loadingUpload"
+      class="px-6 py-2 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+      @click="handleUpload"
+    >
       {{ loadingUpload ? 'Завантаження...' : 'Завантажити PDF' }}
     </button>
 
-    <p v-if="uploadError" style="color: red">❌ {{ uploadError.message }}</p>
-    <p v-if="statusError" style="color: red">❌ {{ statusError.message }}</p>
+    <div v-if="uploadError" class="text-red-500">
+      ❌ {{ uploadError.message }}
+    </div>
+    <div v-if="statusError" class="text-red-500">
+      ❌ {{ statusError.message }}
+    </div>
 
-    <p v-if="statusLoading">⏳ Оновлення бази знань...</p>
-    <p v-if="statusData">📚 Фрагментів у базі знань: {{ statusData.count }}</p>
+    <div v-if="statusLoading" class="text-gray-600">
+      ⏳ Оновлення бази знань...
+    </div>
+    <div v-if="statusData" class="text-green-700 font-medium">
+      📚 Фрагментів у базі знань: {{ statusData.count }}
+    </div>
 
-    <button @click="resetKnowledge(sessionId)">Скинути базу знань</button>
-
-    <button @click="startNewSession">Почати нову сесію</button>
+    <button
+      :disabled="loadingDelete"
+      class="px-6 py-2 rounded-md text-white bg-red-500 hover:bg-red-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+      @click="resetKnowledge"
+    >
+      {{ loadingDelete ? 'Очікуйте...' : 'Скинути базу знань' }}
+    </button>
   </div>
 </template>
 
@@ -25,9 +47,6 @@ import { useApi } from '@/composables/common/use-api.js'
 import { uploadPdf } from '@/api/upload'
 import { getStatus } from '@/api/status'
 import { resetSession } from '@/api/session.js'
-
-const sessionId = localStorage.getItem('sessionId') || crypto.randomUUID()
-localStorage.setItem('sessionId', sessionId)
 
 const file = ref(null)
 
@@ -61,37 +80,18 @@ function onFileChange(e) {
 }
 
 async function handleUpload() {
-  if (!file.value || !sessionId) return
-  await upload(file.value, sessionId)
-  await fetchStatus(sessionId)
+  if (!file.value) return
+  await upload(file.value)
+  await fetchStatus()
 }
 
 async function resetKnowledge() {
-  await deleteKnowledge(sessionId)
+  await deleteKnowledge()
 
   statusData.value = { count: 0 }
 }
 
-function startNewSession() {
-  const newId = crypto.randomUUID()
-  localStorage.setItem('sessionId', newId)
-  location.reload()
-}
-
 onMounted(() => {
-  fetchStatus(sessionId)
+  fetchStatus()
 })
 </script>
-
-<style scoped>
-.pdf-uploader {
-  margin-top: 2rem;
-}
-input[type='file'] {
-  margin-bottom: 1rem;
-}
-button {
-  padding: 0.5rem 1rem;
-  margin-bottom: 1rem;
-}
-</style>

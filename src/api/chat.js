@@ -1,5 +1,5 @@
 import { api } from './index'
 
-export function askChat(question, sessionId) {
-  return api.post('/api/chat', { question, sessionId }).then((r) => r.data)
+export function askChat(question) {
+  return api.post('/api/chat', { question }).then((r) => r.data)
 }

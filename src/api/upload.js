@@ -1,9 +1,8 @@
 import { api } from './index'
 
-export function uploadPdf(file, sessionId) {
+export function uploadPdf(file) {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('sessionId', sessionId)
 
   return api
     .post('/upload', formData, {

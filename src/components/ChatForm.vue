@@ -1,17 +1,29 @@
 <template>
-  <div class="chat-form">
-    <h2>Постав запитання до PDF</h2>
+  <div class="space-y-6">
+    <h2 class="text-xl font-semibold text-indigo-700">
+      Постав запитання до PDF
+    </h2>
 
-    <textarea v-model="question" rows="4" placeholder="Ваше питання..." />
-    <button :disabled="!question || loading" @click="handleAsk">
+    <textarea
+      v-model="question"
+      rows="4"
+      placeholder="Ваше питання..."
+      class="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+    />
+
+    <button
+      :disabled="!question || loading"
+      class="px-6 py-2 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+      @click="handleAsk"
+    >
       {{ loading ? 'Очікуйте...' : 'Надіслати' }}
     </button>
 
-    <p v-if="error" style="color: red">❌ {{ error.message }}</p>
+    <p v-if="error" class="text-red-500">❌ {{ error.message }}</p>
 
-    <div v-if="data" class="response">
-      <strong>🤖 Відповідь:</strong>
-      <p>{{ data.reply }}</p>
+    <div v-if="data" class="bg-gray-100 p-4 rounded-md shadow-sm">
+      <strong class="text-gray-700 block mb-2">🤖 Відповідь:</strong>
+      <p class="text-gray-800 whitespace-pre-line">{{ data.reply }}</p>
     </div>
   </div>
 </template>
@@ -21,36 +33,12 @@ import { ref } from 'vue'
 import { useApi } from '@/composables/common/use-api.js'
 import { askChat } from '@/api/chat'
 
-const sessionId = localStorage.getItem('sessionId')
 const question = ref('')
 
 const { call: ask, loading, error, data } = useApi(askChat)
 
 async function handleAsk() {
-  if (!question.value || !sessionId) return
-  await ask(question.value, sessionId)
+  if (!question.value) return
+  await ask(question.value)
 }
 </script>
-
-<style scoped>
-.chat-form {
-  margin-top: 2rem;
-}
-textarea {
-  width: 100%;
-  padding: 0.5rem;
-  font-size: 1rem;
-  margin-bottom: 1rem;
-}
-button {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
-}
-.response {
-  margin-top: 1rem;
-  background: #f4f4f4;
-  padding: 1rem;
-  color: #333;
-  border-radius: 8px;
-}
-</style>

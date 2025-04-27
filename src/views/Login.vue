@@ -37,8 +37,6 @@ const handleLogin = async () => {
     password: password.value,
   })
 
-  console.log('Login response:', token) // Додано для налагодження
-
   localStorage.setItem('token', token)
 
   await router.push('/')

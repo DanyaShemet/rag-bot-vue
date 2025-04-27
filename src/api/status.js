@@ -1,5 +1,5 @@
 import { api } from './index'
 
-export function getStatus(sessionId) {
-  return api.get(`/api/status/${sessionId}`).then((r) => r.data)
+export function getStatus() {
+  return api.get(`/api/status`).then((r) => r.data)
 }

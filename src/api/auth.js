@@ -7,3 +7,7 @@ export function login({ email, password }) {
 export function register({ email, password }) {
   return api.post('/auth/register/', { email, password }).then((r) => r.data)
 }
+
+export function getMe() {
+  return api.get('auth/me').then((r) => r.data)
+}
