@@ -26,7 +26,7 @@
             <div class="flex space-x-4">
               <button
                 class="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 transition"
-                @click="downloadDocument(doc._id)"
+                @click="downloadDocument(doc.fileUrl)"
               >
                 📥 Завантажити
               </button>
@@ -49,6 +49,7 @@ import { ref, onMounted } from 'vue'
 import api from '@/api'
 import { useApi } from '@/composables/common/use-api.js'
 import { getDocuments, deleteDocument } from '@/api/documents'
+import AppHeader from '@/components/AppHeader.vue'
 
 const {
   call: getDocs,
@@ -67,7 +68,7 @@ const {
   notifySuccess: false,
 })
 
-async function downloadDocument(url) {
+function downloadDocument(url) {
   window.open(url, '_blank')
 }
 
